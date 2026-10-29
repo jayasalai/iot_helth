@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT-Based Health Monitoring System</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+    <!-- Top Application Header -->
+    <header class="app-header">
+        <div class="brand-section">
+            <div class="brand-logo">🩺</div>
+            <div>
+                <div class="brand-title">
+                    VITALSYNC <span style="font-weight: 400; color: var(--text-secondary);">IoT</span>
+                    <span class="brand-tag">Clinical Portal</span>
+                </div>
+                <div class="brand-subtitle">IoT-Based Healthcare Telemetry & Database Management</div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <!-- Oracle DB Connection Pill -->
+            <div class="db-pill" id="headerDbPill" title="JDBC Connection Status">
+                <span class="db-dot" id="headerDbDot"></span>
+                <span id="headerDbText">Checking Oracle...</span>
+            </div>
+
+            <!-- User Session Badge -->
+            <div class="user-badge" id="userBadge">
+                <div class="user-avatar" id="userAvatar">A</div>
+                <div>
+                    <div style="font-weight: 600;" id="userNameDisplay">Admin</div>
+                    <div style="font-size: 0.7rem; color: var(--primary);" id="userRoleDisplay">Administrator</div>
+                </div>
+            </div>
+
+            <button id="logoutBtn" class="btn btn-secondary btn-sm" title="Log out from system">
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="app-nav">
+        <button class="nav-tab active" data-tab="dashboardTab">
+            <span>📊</span> Dashboard Overview
+        </button>
+        <button class="nav-tab" data-tab="simulatorTab">
+            <span>📡</span> IoT Sensor Simulator
+        </button>
+        <button class="nav-tab" data-tab="patientsTab">
+            <span>👥</span> Patient Management
+        </button>
+        <button class="nav-tab" data-tab="historyTab">
+            <span>📈</span> Clinical History & Trends
+        </button>
+        <button class="nav-tab" data-tab="vivaTab">
+            <span>🔬</span> Database Architecture & Queries
+        </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- ================================================================= -->
+        <!-- TAB 1: DASHBOARD OVERVIEW                                         -->
+        <!-- ================================================================= -->
+        <section id="dashboardTab" class="tab-pane active">
+            <!-- Section Header -->
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Healthcare Monitoring Dashboard</h2>
+                    <p class="section-subtitle">Real-time aggregated telemetry records retrieved directly from Oracle Database</p>
+                </div>
+                <button id="refreshDashboardBtn" class="btn btn-secondary btn-sm">
+                    🔄 Refresh Metrics
+                </button>
+            </div>
+
+            <!-- 4 Core Metric Stat Cards (Calculated from Oracle via COUNT Aggregates) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Total Registered Patients</div>
+                        <div class="stat-value" id="statTotalPatients">-</div>
+                        <div class="stat-subtext">Active in-patient registry</div>
+                    </div>
+                    <div class="stat-icon">🏥</div>
+                </div>
+
+                <div class="stat-card">
+                    <div>
+                        <div class="stat-label">Total IoT Telemetry Logs</div>
+                        <div class="stat-value" id="statTotalReadings">-</div>
+                        <div class="stat-subtext">Continuous sensor streams</div>
+                    </div>
+                    <div class="stat-icon">📡</div>
+                </div>
+
+                <div class="stat-card normal">
+                    <div>
+                        <div class="stat-label">Normal Vitals</div>
+                        <div class="stat-value" id="statNormalPatients" style="color: var(--status-normal);">-</div>
+                        <div class="stat-subtext">Patients in stable reference range</div>
+                    </div>
+                    <div class="stat-icon" style="color: var(--status-normal);">✅</div>
+                </div>
+
+                <div class="stat-card critical">
+                    <div>
+                        <div class="stat-label">Abnormal / Triage Needed</div>
+                        <div class="stat-value" id="statAbnormalPatients" style="color: var(--status-critical);">-</div>
+                        <div class="stat-subtext">Warning or Critical status</div>
+                    </div>
+                    <div class="stat-icon" style="color: var(--status-critical);">⚠️</div>
+                </div>
+            </div>
+
+            <!-- Two Column Section: Abnormal Alerts + Recent Activity -->
+            <div class="two-col-grid">
+                <!-- Recent Telemetry Stream -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📡 Recent Ingested Telemetry Streams</h3>
+                        <span class="badge badge-neutral">Live Feed (JOIN PATIENTS)</span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Temp</th>
+                                    <th>Heart Rate</th>
+                                    <th>SpO2</th>
+                                    <th>Blood Pressure</th>
+                                    <th>Resp</th>
+                                    <th>Status</th>
+                                    <th>Logged At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentReadingsTbody">
+                                <tr><td colspan="8" class="table-empty">Loading recent telemetry from Oracle...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Abnormal Patient Attention Queue -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🚨 Immediate Clinical Triage</h3>
+                            <span class="badge badge-critical" id="abnormalCountBadge">0 Alerts</span>
+                        </div>
+                        <div class="card-body" id="abnormalAlertsContainer" style="max-height: 400px; overflow-y: auto;">
+                            <div class="table-empty">No active abnormal alerts. All patient vitals are currently stable.</div>
+                        </div>
+                    </div>
+
+                    <!-- Clinical Population Averages (AVG, MIN, MAX Aggregates) -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Population Telemetry Averages</h3>
+                            <span class="badge badge-neutral">SQL AVG()</span>
+                        </div>
+                        <div class="card-body">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                <span style="color: var(--text-secondary);">Avg Body Temp:</span>
+                                <strong id="avgTempDisplay" style="color: var(--text-primary);">- °C</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                                <span style="color: var(--text-secondary);">Avg Resting Heart Rate:</span>
+                                <strong id="avgHrDisplay" style="color: var(--text-primary);">- BPM</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-secondary);">Avg Blood Oxygen (SpO2):</span>
+                                <strong id="avgSpo2Display" style="color: var(--text-primary);">- %</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 2: IOT SENSOR SIMULATOR                                       -->
+        <!-- ================================================================= -->
+        <section id="simulatorTab" class="tab-pane">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">IoT Telemetry Sensor Simulator</h2>
+                    <p class="section-subtitle">
+                        Simulate wireless biometric wearable hardware. Records are validated, classified by clinical priority rules, and inserted into Oracle using JDBC PreparedStatement.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Disclaimer Banner -->
+            <div class="alert-banner warning">
+                <span>
+                    ℹ️ <strong>SIMULATED LABORATORY ENVIRONMENT:</strong> Readings represent educational simulated sensor data for academic demonstration. The system calculates triage severity using configurable clinical reference thresholds.
+                </span>
+            </div>
+
+            <div class="two-col-grid">
+                <!-- Telemetry Form -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🎛️ Sensor Calibration & Telemetry Generator</h3>
+                        <!-- Quick Scenario Preset Buttons -->
+                        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="App.applySimulatorPreset('normal')">Preset: Normal</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="App.applySimulatorPreset('fever')">Preset: Fever/Warning</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="App.applySimulatorPreset('hypoxia')">Preset: Hypoxia/Critical</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="App.applySimulatorPreset('bradycardia')">Preset: Bradycardia/Critical</button>
+                        </div>
+                    </div>
+
+                    <form id="iotSimulatorForm" class="card-body">
+                        <!-- Patient Select -->
+                        <div class="form-group">
+                            <label class="form-label" for="simPatientSelect">Target Registered Patient *</label>
+                            <select id="simPatientSelect" class="form-select" required>
+                                <option value="">-- Select Patient from Oracle DB --</option>
+                            </select>
+                        </div>
+
+                        <!-- Sliders for Vitals -->
+                        <div class="form-row">
+                            <!-- Body Temperature -->
+                            <div class="slider-control">
+                                <div class="slider-header">
+                                    <span class="slider-name">Body Temperature</span>
+                                    <span class="slider-value-badge" id="valTemp">37.0 °C</span>
+                                </div>
+                                <input type="range" id="inputTemp" min="32.0" max="42.0" step="0.1" value="37.0">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    <span>32.0 °C</span>
+                                    <span>Ref: 36.1 - 37.5 °C</span>
+                                    <span>42.0 °C</span>
+                                </div>
+                            </div>
+
+                            <!-- Heart Rate -->
+                            <div class="slider-control">
+                                <div class="slider-header">
+                                    <span class="slider-name">Heart Rate (Pulse)</span>
+                                    <span class="slider-value-badge" id="valHr">75 BPM</span>
+                                </div>
+                                <input type="range" id="inputHr" min="30" max="200" step="1" value="75">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    <span>30 BPM</span>
+                                    <span>Ref: 60 - 100 BPM</span>
+                                    <span>200 BPM</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <!-- SpO2 -->
+                            <div class="slider-control">
+                                <div class="slider-header">
+                                    <span class="slider-name">Blood Oxygen (SpO2)</span>
+                                    <span class="slider-value-badge" id="valSpo2">98.0 %</span>
+                                </div>
+                                <input type="range" id="inputSpo2" min="70.0" max="100.0" step="0.5" value="98.0">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    <span>70.0 %</span>
+                                    <span>Ref: ≥ 95.0%</span>
+                                    <span>100.0 %</span>
+                                </div>
+                            </div>
+
+                            <!-- Respiratory Rate -->
+                            <div class="slider-control">
+                                <div class="slider-header">
+                                    <span class="slider-name">Respiratory Rate</span>
+                                    <span class="slider-value-badge" id="valResp">16 BPM</span>
+                                </div>
+                                <input type="range" id="inputResp" min="6" max="40" step="1" value="16">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    <span>6 BPM</span>
+                                    <span>Ref: 12 - 20 BPM</span>
+                                    <span>40 BPM</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <!-- Systolic Blood Pressure -->
+                            <div class="slider-control">
+                                <div class="slider-header">
+                                    <span class="slider-name">Systolic Blood Pressure</span>
+                                    <span class="slider-value-badge" id="valSys">120 mmHg</span>
+                                </div>
+                                <input type="range" id="inputSys" min="60" max="220" step="1" value="120">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    <span>60 mmHg</span>
+                                    <span>Ref: 90 - 120 mmHg</span>
+                                    <span>220 mmHg</span>
+                                </div>
+                            </div>
+
+                            <!-- Diastolic Blood Pressure -->
+                            <div class="slider-control">
+                                <div class="slider-header">
+                                    <span class="slider-name">Diastolic Blood Pressure</span>
+                                    <span class="slider-value-badge" id="valDia">80 mmHg</span>
+                                </div>
+                                <input type="range" id="inputDia" min="40" max="140" step="1" value="80">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                    <span>40 mmHg</span>
+                                    <span>Ref: 60 - 80 mmHg</span>
+                                    <span>140 mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer" style="padding-left: 0; padding-right: 0; background: transparent; border: none;">
+                            <button type="submit" id="recordReadingBtn" class="btn btn-primary" style="padding: 0.75rem 1.75rem;">
+                                📡 Record Sensor Reading (INSERT via JDBC)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Real-Time Triage Status Preview -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🩺 Live Clinical Triage Preview</h3>
+                            <span class="badge" id="previewOverallBadge">NORMAL</span>
+                        </div>
+                        <div class="card-body">
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                                Dynamically evaluated against evidence-based reference thresholds using status priority hierarchy (<strong>CRITICAL &gt; WARNING &gt; NORMAL</strong>).
+                            </p>
+
+                            <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm);">
+                                    <span>Temperature Status:</span>
+                                    <span class="badge" id="badgeTemp">NORMAL</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm);">
+                                    <span>Heart Rate Status:</span>
+                                    <span class="badge" id="badgeHr">NORMAL</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm);">
+                                    <span>Blood Oxygen (SpO2) Status:</span>
+                                    <span class="badge" id="badgeSpo2">NORMAL</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm);">
+                                    <span>Blood Pressure Status:</span>
+                                    <span class="badge" id="badgeBp">NORMAL</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm);">
+                                    <span>Respiratory Rate Status:</span>
+                                    <span class="badge" id="badgeResp">NORMAL</span>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 1.25rem; padding: 0.75rem; background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-muted);">
+                                <strong>JDBC Execution Flow:</strong><br>
+                                <code>PreparedStatement ps = conn.prepareStatement("INSERT INTO HEALTH_READINGS ...")</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 3: PATIENT MANAGEMENT                                         -->
+        <!-- ================================================================= -->
+        <section id="patientsTab" class="tab-pane">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Patient Management Module</h2>
+                    <p class="section-subtitle">Manage registered hospital in-patients with Oracle JDBC CRUD operations</p>
+                </div>
+                <button class="btn btn-primary" onclick="App.openPatientModal()">
+                    ➕ Register New Patient
+                </button>
+            </div>
+
+            <div class="card">
+                <!-- Search & Filters -->
+                <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+                    <div style="display: flex; gap: 0.5rem; flex: 1; min-width: 280px;">
+                        <input type="text" id="patientSearchInput" class="form-input" placeholder="Search by patient ID or full name...">
+                        <button class="btn btn-secondary" onclick="App.searchPatients()">Search</button>
+                        <button class="btn btn-secondary" onclick="App.resetPatientSearch()">Reset</button>
+                    </div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);" id="patientCountDisplay">
+                        Showing 0 patients
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Full Name</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Blood</th>
+                                <th>Contact Number</th>
+                                <th>Email</th>
+                                <th>Latest Vitals Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientsTbody">
+                            <tr><td colspan="9" class="table-empty">Loading patient registry from Oracle...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="card-footer" style="justify-content: space-between;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);" id="paginationInfo">Page 1 of 1</span>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button id="prevPageBtn" class="btn btn-secondary btn-sm" onclick="App.changePatientPage(-1)" disabled>Previous</button>
+                        <button id="nextPageBtn" class="btn btn-secondary btn-sm" onclick="App.changePatientPage(1)" disabled>Next</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 4: CLINICAL HISTORY & TRENDS                                  -->
+        <!-- ================================================================= -->
+        <section id="historyTab" class="tab-pane">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Patient Telemetry History & Reports</h2>
+                    <p class="section-subtitle">Time-series vital signs, date-range filtering, and longitudinal trend graphs</p>
+                </div>
+            </div>
+
+            <!-- Patient Selector and Date Range Bar -->
+            <div class="card" style="padding: 1rem 1.25rem;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 220px;">
+                        <label class="form-label">Select Patient</label>
+                        <select id="historyPatientSelect" class="form-select" onchange="App.loadPatientHistory()">
+                            <option value="">-- Choose Patient --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">From Date</label>
+                        <input type="date" id="historyFromDate" class="form-input">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">To Date</label>
+                        <input type="date" id="historyToDate" class="form-input">
+                    </div>
+                    <button class="btn btn-primary" onclick="App.loadPatientHistory()">
+                        Apply Filter (WHERE)
+                    </button>
+                    <button class="btn btn-secondary" onclick="App.resetHistoryFilter()">
+                        Clear Filter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Patient Profile & Latest Summary Header -->
+            <div id="historyPatientHeader" class="card" style="display: none;">
+                <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 id="histPatientName" style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">-</h3>
+                        <p id="histPatientMeta" style="font-size: 0.85rem; color: var(--text-secondary);">-</p>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; text-align: right;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Current Triage Status</div>
+                            <span class="badge" id="histPatientStatusBadge">NORMAL</span>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Total Telemetry Logs</div>
+                            <strong id="histTotalLogs" style="font-size: 1.15rem; color: var(--primary);">0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Visual Telemetry Graphs (Temperature, Heart Rate, SpO2, Blood Pressure) -->
+            <div class="form-row" id="chartsContainer" style="margin-bottom: 1.5rem;">
+                <!-- Temperature Chart -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <canvas id="tempCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Heart Rate Chart -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <canvas id="hrCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- SpO2 Chart -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <canvas id="spo2Canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Systolic BP Chart -->
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-body" style="padding: 0.75rem;">
+                        <canvas id="bpCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Telemetry Log Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📋 Historical Telemetry Records</h3>
+                    <span class="badge badge-neutral">SQL ORDER BY RECORDED_AT DESC</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Reading ID</th>
+                                <th>Timestamp</th>
+                                <th>Temp (°C)</th>
+                                <th>Heart Rate (BPM)</th>
+                                <th>SpO2 (%)</th>
+                                <th>Blood Pressure (mmHg)</th>
+                                <th>Resp Rate (BPM)</th>
+                                <th>Triage Status</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTbody">
+                            <tr><td colspan="9" class="table-empty">Select a patient above to view historical telemetry logs.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- TAB 5: DATABASE ARCHITECTURE & SQL QUERIES                     -->
+        <!-- ================================================================= -->
+        <section id="vivaTab" class="tab-pane">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Database Architecture &amp; Technical Hub</h2>
+                    <p class="section-subtitle">Architecture overview, JDBC components, and SQL verification queries</p>
+                </div>
+            </div>
+
+            <div class="two-col-grid">
+                <div>
+                    <!-- JDBC Architecture Explanation Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">📚 JDBC Architecture & Core Interfaces</h3>
+                        </div>
+                        <div class="card-body" style="font-size: 0.875rem; line-height: 1.7;">
+                            <p><strong>1. DriverManager:</strong> Manages JDBC drivers registered in the JVM. Uses <code>DriverManager.getConnection(url, user, pass)</code> to establish the socket connection to Oracle.</p>
+                            <p><strong>2. Connection (java.sql.Connection):</strong> Represents the physical session with Oracle. Manages transactions using <code>setAutoCommit(false)</code>, <code>commit()</code>, and <code>rollback()</code>.</p>
+                            <p><strong>3. PreparedStatement:</strong> Precompiles SQL statements on the Oracle database engine. Prevents SQL injection attacks, handles datatype casting, and optimizes repeated query execution.</p>
+                            <p><strong>4. executeQuery() vs executeUpdate():</strong>
+                                <br>• <code>executeQuery()</code>: Used for SELECT queries; returns a <code>ResultSet</code>.
+                                <br>• <code>executeUpdate()</code>: Used for DML (INSERT, UPDATE, DELETE); returns the integer row count affected.
+                            </p>
+                            <p><strong>5. ResultSet:</strong> A cursor pointing to rows returned by Oracle. Navigated via <code>rs.next()</code> with typed getters (<code>rs.getInt()</code>, <code>rs.getString()</code>, <code>rs.getDouble()</code>).</p>
+                        </div>
+                    </div>
+
+                    <!-- ACID Transaction Demonstration -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🔒 ACID Transaction Handling in Code</h3>
+                            <span class="badge badge-normal">Implemented in PatientDAO</span>
+                        </div>
+                        <div class="card-body" style="font-size: 0.85rem; font-family: var(--font-mono); background: var(--bg-surface-elevated); padding: 1rem; border-radius: var(--radius-md);">
+<pre style="color: #38bdf8;">
+conn.setAutoCommit(false); // 1. Begin atomic transaction
+try {
+    // 2. Delete dependent readings (Foreign Key cleanup)
+    psReadings.executeUpdate();
+
+    // 3. Delete parent patient record
+    psPatient.executeUpdate();
+
+    conn.commit(); // 4. Commit both operations atomically!
+} catch (SQLException e) {
+    conn.rollback(); // 5. Undo all changes if any error occurs
+    throw e;
+} finally {
+    conn.setAutoCommit(true);
+}
+</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Live Oracle Connection Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">🔌 Active Oracle Connection Details</h3>
+                            <button class="btn btn-secondary btn-sm" onclick="App.verifyDbDiagnostics()">Test Connection</button>
+                        </div>
+                        <div class="card-body" id="diagnosticsDetails" style="font-size: 0.825rem;">
+                            Loading Oracle diagnostics...
+                        </div>
+                    </div>
+
+                    <!-- SQL Verification Queries for Examiner -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">⚡ Examiner SQL Verification Queries</h3>
+                        </div>
+                        <div class="card-body" style="font-size: 0.8rem;">
+                            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                Run these directly in Oracle SQL*Plus or SQL Developer to verify data:
+                            </p>
+                            <div style="background: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-sm); font-family: var(--font-mono); color: #a5f3fc; margin-bottom: 0.75rem; overflow-x: auto;">
+                                -- Verify JOIN and latest telemetry:<br>
+                                SELECT p.FULL_NAME, h.TEMPERATURE, h.HEART_RATE, h.SPO2, h.OVERALL_STATUS<br>
+                                FROM PATIENTS p JOIN HEALTH_READINGS h ON p.PATIENT_ID = h.PATIENT_ID<br>
+                                ORDER BY h.RECORDED_AT DESC;
+                            </div>
+                            <div style="background: var(--bg-surface-elevated); padding: 0.75rem; border-radius: var(--radius-sm); font-family: var(--font-mono); color: #a5f3fc; overflow-x: auto;">
+                                -- Verify Aggregates:<br>
+                                SELECT COUNT(*) AS TOTAL, ROUND(AVG(HEART_RATE)) AS MEAN_HR<br>
+                                FROM HEALTH_READINGS;
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ================================================================= -->
+    <!-- MODALS: PATIENT REGISTRATION / EDIT / DELETE CONFIRMATION         -->
+    <!-- ================================================================= -->
+
+    <!-- Patient Create / Edit Modal -->
+    <div id="patientModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="card-header">
+                <h3 class="card-title" id="patientModalTitle">Register New In-Patient</h3>
+                <button class="btn btn-secondary btn-sm" onclick="App.closePatientModal()">✕</button>
+            </div>
+            <form id="patientForm" class="card-body">
+                <input type="hidden" id="modalPatientId" value="">
+
+                <div class="form-group">
+                    <label class="form-label" for="modalFullName">Full Name *</label>
+                    <input type="text" id="modalFullName" class="form-input" placeholder="e.g. Rajesh Kumar" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="modalAge">Age *</label>
+                        <input type="number" id="modalAge" class="form-input" min="1" max="125" placeholder="e.g. 45" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="modalGender">Gender *</label>
+                        <select id="modalGender" class="form-select" required>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="modalBloodGroup">Blood Group *</label>
+                        <select id="modalBloodGroup" class="form-select" required>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="modalContact">Contact Phone *</label>
+                        <input type="text" id="modalContact" class="form-input" placeholder="+91 9876543210" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="modalEmail">Email Address *</label>
+                        <input type="email" id="modalEmail" class="form-input" placeholder="patient@example.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="modalHistory">Medical History / Clinical Notes</label>
+                    <textarea id="modalHistory" class="form-textarea" placeholder="e.g. Type 2 Diabetes, Hypertension, Asthma history..."></textarea>
+                </div>
+
+                <div class="card-footer" style="padding: 1rem 0 0 0; background: transparent; border: none;">
+                    <button type="button" class="btn btn-secondary" onclick="App.closePatientModal()">Cancel</button>
+                    <button type="submit" id="savePatientBtn" class="btn btn-primary">Save to Oracle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal (Visible Transaction Demo) -->
+    <div id="deleteConfirmModal" class="modal-backdrop hidden">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="card-header">
+                <h3 class="card-title" style="color: var(--status-critical);">⚠️ Confirm Patient Deletion</h3>
+                <button class="btn btn-secondary btn-sm" onclick="App.closeDeleteModal()">✕</button>
+            </div>
+            <div class="card-body">
+                <p style="margin-bottom: 0.75rem; color: var(--text-primary);">
+                    Are you sure you want to delete patient <strong id="deletePatientName">-</strong> (ID #<span id="deletePatientIdDisplay">-</span>)?
+                </p>
+                <div class="alert-banner critical" style="font-size: 0.775rem;">
+                    <span>
+                        <strong>TRANSACTION NOTE:</strong> This operation executes an atomic transaction in Oracle JDBC. It deletes all associated health telemetry logs and removes the patient record with <code>conn.commit()</code> or <code>conn.rollback()</code> on failure.
+                    </span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-secondary" onclick="App.closeDeleteModal()">Cancel</button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger" onclick="App.executeDeletePatient()">
+                    Confirm & Execute Transaction
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Script Dependencies -->
+    <script src="js/api.js"></script>
+    <script src="js/vitals-rules.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

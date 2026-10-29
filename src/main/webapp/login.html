@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | IoT Health Monitoring System</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            z-index: 10;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: var(--radius-md);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            color: #fff;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .login-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .login-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.35rem;
+        }
+
+        .demo-credentials-box {
+            margin-top: 1.75rem;
+            padding: 1rem;
+            background: var(--bg-surface-elevated);
+            border: 1px dashed var(--border-strong);
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+        }
+
+        .demo-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .demo-pill-btn {
+            background: var(--primary-glow);
+            color: var(--primary);
+            border: 1px solid var(--border-accent);
+            padding: 0.25rem 0.6rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .demo-pill-btn:hover {
+            background: var(--primary);
+            color: var(--text-inverse);
+        }
+
+        .db-status-bar {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon">🩺</div>
+                <h1 class="login-title">VITALSYNC IoT</h1>
+                <p class="login-subtitle">IoT Healthcare Telemetry &amp; Clinical Management Portal</p>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="errorBanner" class="alert-banner critical" style="display: none;">
+                <span id="errorMessage">Invalid credentials</span>
+            </div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="usernameInput">Username or Registered Email</label>
+                    <input 
+                        type="text" 
+                        id="usernameInput" 
+                        class="form-input" 
+                        placeholder="e.g. admin or admin@hospital.edu" 
+                        required 
+                        autocomplete="username"
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="passwordInput">Password</label>
+                    <input 
+                        type="password" 
+                        id="passwordInput" 
+                        class="form-input" 
+                        placeholder="Enter secure password" 
+                        required 
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem;">
+                    Sign In to Dashboard
+                </button>
+            </form>
+
+            <!-- Quick Demo Credential Autofill -->
+            <div class="demo-credentials-box">
+                <div class="demo-title">
+                    <span>⚡ Quick Demo Credentials</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button type="button" class="demo-pill-btn" onclick="autofillDemo('admin', 'Admin@123')">
+                        Fill Admin (admin / Admin@123)
+                    </button>
+                    <button type="button" class="demo-pill-btn" onclick="autofillDemo('nurse_priya', 'Nurse@123')">
+                        Fill Nurse (nurse_priya)
+                    </button>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.725rem;">
+                    Stored as cryptographic SHA-256 hashes in Oracle Database table <code>USERS</code>.
+                </p>
+            </div>
+
+            <div class="db-status-bar" id="dbStatusBar">
+                Checking Oracle JDBC connection...
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        function autofillDemo(user, pass) {
+            document.getElementById('usernameInput').value = user;
+            document.getElementById('passwordInput').value = pass;
+            document.getElementById('errorBanner').style.display = 'none';
+        }
+
+        // Check Oracle Health on Page Load
+        API.checkHealth().then(res => {
+            const bar = document.getElementById('dbStatusBar');
+            if (res.data && res.data.databaseConnected) {
+                bar.innerHTML = `<span style="color: var(--status-normal);">●</span> Connected to ${res.data.databaseProduct} (${res.data.configuredUser})`;
+            } else {
+                bar.innerHTML = `<span style="color: var(--status-critical);">●</span> Oracle Offline (${res.data?.configuredUrl || 'Not configured'})`;
+            }
+        }).catch(() => {
+            document.getElementById('dbStatusBar').innerHTML = 
+                `<span style="color: var(--status-warning);">●</span> Database diagnostic check pending login`;
+        });
+
+        // Form Submit Handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value;
+            const btn = document.getElementById('loginBtn');
+            const errBanner = document.getElementById('errorBanner');
+            const errMsg = document.getElementById('errorMessage');
+
+            errBanner.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Authenticating with Oracle...';
+
+            try {
+                const res = await API.login(username, password);
+                if (res.success) {
+                    window.location.href = 'index.html';
+                } else {
+                    errMsg.textContent = res.error || 'Authentication failed.';
+                    errBanner.style.display = 'flex';
+                }
+            } catch (err) {
+                errMsg.textContent = err.message || 'Login failed. Verify credentials.';
+                errBanner.style.display = 'flex';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In to Dashboard';
+            }
+        });
+    </script>
+</body>
+</html>
